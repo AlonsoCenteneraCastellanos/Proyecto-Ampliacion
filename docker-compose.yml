@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: webfusion_db
+    restart: always
+    environment:
+      MYSQL_DATABASE:      wordpress
+      MYSQL_USER:          wpuser
+      MYSQL_PASSWORD:      wppassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - webfusion_net
+
+  wordpress:
+    image: wordpress:latest
+    container_name: webfusion_wp
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      WORDPRESS_DB_HOST:     db:3306
+      WORDPRESS_DB_USER:     wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME:     wordpress
+    volumes:
+      - wp_data:/var/www/html
+      - theme_data:/var/www/html/wp-content/themes/webfusion
+    depends_on:
+      - db
+    networks:
+      - webfusion_net
+
+  git-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile.gitsync
+    container_name: webfusion_gitsync
+    restart: "no"
+    environment:
+      REPO_URL: "https://github.com/AlonsoCenteneraCastellanos/Proyecto-Ampliacion"
+    volumes:
+      - theme_data:/output
+    networks:
+      - webfusion_net
+
+volumes:
+  db_data:
+  wp_data:
+  theme_data:
+
+networks:
+  webfusion_net:
+    driver: bridge
